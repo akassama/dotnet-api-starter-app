@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NetApiStarterApp.Data;
 using NetApiStarterApp.Models.Mappings;
+using NetApiStarterApp.Repository.Account;
 using NetApiStarterApp.Repository.Vehicle;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(MapperConfig));
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
 
 var app = builder.Build();
 

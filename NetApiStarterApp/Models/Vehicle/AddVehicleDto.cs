@@ -1,8 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-
+﻿
 namespace NetApiStarterApp.Models.Vehicle
 {
-    public class VehicleAddDto
+    public class AddVehicleDto
     {
         public string? Make { get; set; }
 

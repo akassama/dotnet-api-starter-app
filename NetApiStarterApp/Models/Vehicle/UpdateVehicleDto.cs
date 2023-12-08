@@ -1,6 +1,6 @@
 ﻿namespace NetApiStarterApp.Models.Vehicle
 {
-    public class VehicleUpdateDto
+    public class UpdateVehicleDto
     {
         public Guid VehicleId { get; set; }
 

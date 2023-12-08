@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using NetApiStarterApp.Models.Account;
 using NetApiStarterApp.Models.Vehicle;
 
 namespace NetApiStarterApp.Models.Mappings
@@ -9,9 +10,17 @@ namespace NetApiStarterApp.Models.Mappings
         {
             //Vehicle Mapping
             CreateMap<VehicleModel,
-                VehicleAddDto>().ReverseMap();
+                AddVehicleDto>().ReverseMap();
             CreateMap<VehicleModel,
-                VehicleUpdateDto>().ReverseMap();
+                UpdateVehicleDto>().ReverseMap();
+
+            //Account Mapping
+            CreateMap<AccountModel,
+                AddAccountDto>().ReverseMap();
+            CreateMap<AccountModel,
+                UpdateAccountDto>().ReverseMap();
+            CreateMap<AccountDetailsModel,
+                UpdateAccountDetailsDto>().ReverseMap();
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 using NetApiStarterApp.Data;
 using NetApiStarterApp.Models.Vehicle;
 using System.Reflection;
@@ -24,11 +25,18 @@ namespace NetApiStarterApp.Repository.Vehicle
 
         public async Task<VehicleModel> GetVehicleByIdAsync(Guid vehicleId)
         {
-            return await _dataConnection.Vehicles
-                .FirstOrDefaultAsync(v => v.VehicleId == vehicleId);
+            var vehicle = await _dataConnection.Vehicles.FirstOrDefaultAsync(x => x.VehicleId == vehicleId);
+
+            if (vehicle == null)
+            {
+                // Handle the case where the vehicle is not found
+                throw new InvalidOperationException("Vehicle not found");
+            }
+
+            return vehicle;
         }
 
-        public async Task<VehicleModel> AddVehicleAsync(VehicleAddDto vehicleAddDto)
+        public async Task<VehicleModel> AddVehicleAsync(AddVehicleDto vehicleAddDto)
         {
             // Add new vehicle
             var vehicleModel =  _mapper.Map<VehicleModel>(vehicleAddDto);
@@ -42,7 +50,7 @@ namespace NetApiStarterApp.Repository.Vehicle
             return vehicleModel;
         }
 
-        public async Task<VehicleModel> UpdateVehicleAsync(VehicleUpdateDto vehicleUpdateDto)
+        public async Task<VehicleModel> UpdateVehicleAsync(UpdateVehicleDto vehicleUpdateDto)
         {
 
             // Update existing vehicle
@@ -61,6 +69,10 @@ namespace NetApiStarterApp.Repository.Vehicle
                 existingVehicle.Price = vehicleModel.Price;
                 existingVehicle.ImagePath = vehicleModel.ImagePath;
                 existingVehicle.UpdatedAt = DateTime.UtcNow;
+            }
+            else
+            {
+                existingVehicle = new VehicleModel();
             }
 
             await _dataConnection.SaveChangesAsync();

@@ -35,7 +35,7 @@ namespace NetApiStarterApp.Controllers.Vehicle
 
         [AllowAnonymous]
         [HttpPost("add-vehicle")]
-        public async Task<IActionResult> AddVehicle(VehicleAddDto vehicleRequest)
+        public async Task<IActionResult> AddVehicle(AddVehicleDto vehicleRequest)
         {
             var data = await _vehicleService.AddVehicleAsync(vehicleRequest);
 
@@ -44,7 +44,7 @@ namespace NetApiStarterApp.Controllers.Vehicle
 
         [AllowAnonymous]
         [HttpPost("update-vehicle")]
-        public async Task<IActionResult> UpdateVehicle(VehicleUpdateDto vehicleRequest)
+        public async Task<IActionResult> UpdateVehicle(UpdateVehicleDto vehicleRequest)
         {
             var data = await _vehicleService.UpdateVehicleAsync(vehicleRequest);
 

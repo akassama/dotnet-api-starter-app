@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using NetApiStarterApp.Models.Account;
 using NetApiStarterApp.Models.Vehicle;
 
 namespace NetApiStarterApp.Data
@@ -10,6 +11,9 @@ namespace NetApiStarterApp.Data
         }
 
         public DbSet<VehicleModel> Vehicles { get; set; }
+        public DbSet<AccountModel> Accounts { get; set; }
+        public DbSet<AccountDetailsModel> AccountDetails { get; set; }
+
 
         //Override the OnConfiguring method to read the connection string of database from SQL server via appsettings.json file
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
