@@ -2,26 +2,87 @@
 using NetApiStarterApp.Data;
 using NetApiStarterApp.Models.Account;
 using System.Globalization;
+using System.Security.Cryptography;
 
 namespace NetApiStarterApp.Repository.Account
 {
     public class AccountService : IAccountService
     {
-        private readonly DataConnection _context;
+        private readonly DataConnection _dbContext;
 
         public AccountService(DataConnection context)
         {
-            _context = context;
+            _dbContext = context;
         }
 
         public async Task<List<AccountModel>> GetAccountListAsync()
         {
-            return await _context.Accounts.ToListAsync();
+            return await _dbContext.Accounts.ToListAsync();
         }
+
+        public async Task<List<AccountViewModel>> GetAccountDetailsListAsync()
+        {
+            var accountsWithDetails = await _dbContext.Accounts
+                .Join(
+                    _dbContext.AccountDetails,
+                    account => account.AccountId,
+                    details => details.AccountId,
+                    (account, details) => new { Account = account, Details = details }
+                )
+                .ToListAsync();
+
+            var accountViewModels = accountsWithDetails.Select(result =>
+                new AccountViewModel
+                {
+                    AccountId = result.Account.AccountId,
+                    Username = result.Account.Username,
+                    Email = result.Account.Email,
+                    PhoneNumber = result.Account.PhoneNumber,
+                    IsVerified = result.Account.IsVerified,
+                    IsEmailVerified = result.Account.IsEmailVerified,
+                    IsPhoneVerified = result.Account.IsPhoneVerified,
+                    IsLocked = result.Account.IsLocked,
+                    LockedUntil = result.Account.LockedUntil,
+                    LastLogin = result.Account.LastLogin,
+                    CreatedAt = result.Account.CreatedAt,
+                    AccountDetailsId = result.Details.AccountDetailsId,
+                    DateOfBirth = result.Details.DateOfBirth,
+                    Age = CalculateAge(result.Details.DateOfBirth), // Calculate age using a separate method
+                    Gender = result.Details.Gender,
+                    Address = result.Details.Address,
+                    City = result.Details.City,
+                    Country = result.Details.Country,
+                    ProfilePicture = result.Details.ProfilePicture,
+                    EmergencyContactName = result.Details.EmergencyContactName,
+                    EmergencyContactPhoneNumber = result.Details.EmergencyContactPhoneNumber,
+                    Occupation = result.Details.Occupation,
+                    Company = result.Details.Company,
+                    SecurityQuestionOne = result.Details.SecurityQuestionOne,
+                    SecurityAnswerOne = result.Details.SecurityAnswerOne,
+                    SecurityQuestionTwo = result.Details.SecurityQuestionTwo,
+                    SecurityAnswerTwo = result.Details.SecurityAnswerTwo,
+                    AboutInfo = result.Details.AboutIfo,
+                    AdditionalNotes = result.Details.AdditionalNotes,
+                    UpdatedAt = result.Details.UpdatedAt
+                })
+                .ToList();
+
+            return accountViewModels;
+        }
+
+        // Helper method to calculate age
+        private int CalculateAge(DateTime dateOfBirth)
+        {
+            DateTime today = DateTime.Today;
+            int age = today.Year - dateOfBirth.Year;
+            if (dateOfBirth.Date > today.AddYears(-age)) age--;
+            return age;
+        }
+
 
         public async Task<AccountModel> GetAccountByIdAsync(Guid accountId)
         {
-            var account = await _context.Accounts.FirstOrDefaultAsync(x => x.AccountId == accountId);
+            var account = await _dbContext.Accounts.FirstOrDefaultAsync(x => x.AccountId == accountId);
 
             if (account == null)
             {
@@ -34,7 +95,7 @@ namespace NetApiStarterApp.Repository.Account
 
         public async Task<AccountDetailsModel> GetAccountDetailsByIdAsync(Guid accountId)
         {
-            var account = await _context.AccountDetails.FirstOrDefaultAsync(x => x.AccountId == accountId);
+            var account = await _dbContext.AccountDetails.FirstOrDefaultAsync(x => x.AccountId == accountId);
 
             if (account == null)
             {
@@ -47,6 +108,7 @@ namespace NetApiStarterApp.Repository.Account
 
         public async Task<AccountModel> AddAccountAsync(AddAccountDto addAccountDto)
         {
+            string passwordSalt = GenerateSalt();
             var accountModel = new AccountModel
             {
                 AccountId = Guid.NewGuid(),
@@ -54,18 +116,34 @@ namespace NetApiStarterApp.Repository.Account
                 NormalizedEmail = addAccountDto.Email.ToUpper(),
                 Username = addAccountDto.Username,
                 NormalizedUsername = addAccountDto.Username.ToUpper(),
-                Password = BCrypt.Net.BCrypt.HashPassword(addAccountDto.Password),
+                PasswordSalt = passwordSalt,
+                Password = BCrypt.Net.BCrypt.HashPassword($"{passwordSalt}{addAccountDto.Password}"),
                 CreatedAt = DateTime.UtcNow,
                 // Set other properties from addAccountDto
             };
 
-            _context.Accounts.Add(accountModel);
-            await _context.SaveChangesAsync();
+            _dbContext.Accounts.Add(accountModel);
+            await _dbContext.SaveChangesAsync();
 
             //create account details
             InitiateAccountDetails(accountModel.AccountId);
 
             return accountModel;
+        }
+
+        private string GenerateSalt(int size = 32)
+        {
+            byte[] saltBytes = new byte[size];
+
+            using (var rng = new RNGCryptoServiceProvider())
+            {
+                rng.GetBytes(saltBytes);
+            }
+
+            // Convert the byte array to a hex string
+            string salt = BitConverter.ToString(saltBytes).Replace("-", "").ToLower();
+
+            return salt;
         }
 
         public async Task<bool> InitiateAccountDetails(Guid accountId)
@@ -78,15 +156,15 @@ namespace NetApiStarterApp.Repository.Account
                 // Set other properties as needed
             };
 
-            _context.AccountDetails.Add(accountDetails);
-            await _context.SaveChangesAsync();
+            _dbContext.AccountDetails.Add(accountDetails);
+            await _dbContext.SaveChangesAsync();
 
             return true;
         }
 
         public async Task<AccountModel> UpdateAccountAsync(UpdateAccountDto updateAccountDto)
         {
-            var account = await _context.Accounts.FirstOrDefaultAsync(x=> x.AccountId == updateAccountDto.AccountId);
+            var account = await _dbContext.Accounts.FirstOrDefaultAsync(x=> x.AccountId == updateAccountDto.AccountId);
             //TODO mapper
 
             if (account != null)
@@ -97,7 +175,7 @@ namespace NetApiStarterApp.Repository.Account
                 account.IsEmailVerified = updateAccountDto.IsEmailVerified;
                 account.IsPhoneVerified = updateAccountDto.IsPhoneVerified;
                 account.UpdatedAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync();
+                await _dbContext.SaveChangesAsync();
             }
             else
             {
@@ -109,7 +187,7 @@ namespace NetApiStarterApp.Repository.Account
 
         public async Task<AccountDetailsModel> UpdateAccountDetailsAsync(UpdateAccountDetailsDto updateAccountDetailsDto)
         {
-            var accountDetails = await _context.AccountDetails.FirstOrDefaultAsync(x=> x.AccountId == updateAccountDetailsDto.AccountId);
+            var accountDetails = await _dbContext.AccountDetails.FirstOrDefaultAsync(x=> x.AccountId == updateAccountDetailsDto.AccountId);
             //TODO mapper
 
             if (accountDetails != null)
@@ -132,7 +210,7 @@ namespace NetApiStarterApp.Repository.Account
                 accountDetails.AboutIfo = updateAccountDetailsDto.AboutIfo;
                 accountDetails.AdditionalNotes = updateAccountDetailsDto.AdditionalNotes;
                 accountDetails.UpdatedAt = DateTime.UtcNow;
-                await _context.SaveChangesAsync();
+                await _dbContext.SaveChangesAsync();
             }
             else
             {
@@ -144,18 +222,18 @@ namespace NetApiStarterApp.Repository.Account
 
         public async Task<bool> DeleteAccountAsync(Guid accountId)
         {
-            var account = await _context.Accounts.FirstOrDefaultAsync(x => x.AccountId == accountId);
-            var accountDetails = await _context.AccountDetails.FirstOrDefaultAsync(x => x.AccountId == accountId);
+            var account = await _dbContext.Accounts.FirstOrDefaultAsync(x => x.AccountId == accountId);
+            var accountDetails = await _dbContext.AccountDetails.FirstOrDefaultAsync(x => x.AccountId == accountId);
 
             if (account != null && accountDetails != null)
             {
                 //remove account
-                _context.Accounts.Remove(account);
-                await _context.SaveChangesAsync();
+                _dbContext.Accounts.Remove(account);
+                await _dbContext.SaveChangesAsync();
 
                 //remove account details
-                _context.AccountDetails.Remove(accountDetails);
-                await _context.SaveChangesAsync();
+                _dbContext.AccountDetails.Remove(accountDetails);
+                await _dbContext.SaveChangesAsync();
 
                 return true;
             }
@@ -166,7 +244,7 @@ namespace NetApiStarterApp.Repository.Account
 
         public async Task<string?> GetAccountData(Guid accountId, string returnColumn)
         {
-            var account = await _context.Accounts.FirstOrDefaultAsync(x => x.AccountId == accountId);
+            var account = await _dbContext.Accounts.FirstOrDefaultAsync(x => x.AccountId == accountId);
 
             if (account != null)
             {
@@ -176,6 +254,31 @@ namespace NetApiStarterApp.Repository.Account
             }
 
             return null;
+        }
+
+
+        public async Task<bool> ValidateLogin(LoginModel loginModel)
+        {
+            // Find the user by email in the database
+            var user = await _dbContext.Accounts.FirstOrDefaultAsync(a => a.Email == loginModel.Email);
+
+            // If the user is not found, or the account is locked, return false
+            if (user == null || user.IsLocked)
+            {
+                return false;
+            }
+
+            // Use BCrypt to verify the entered password against the hashed password stored in the database
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify($"{user.PasswordSalt}{loginModel.Password}", user.Password);
+
+            if (isPasswordValid)
+            {
+                // Update last login timestamp or any other relevant logic
+                user.LastLogin = DateTime.UtcNow;
+                await _dbContext.SaveChangesAsync();
+            }
+
+            return isPasswordValid;
         }
 
     }

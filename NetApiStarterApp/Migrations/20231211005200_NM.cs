@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace NetApiStarterApp.Migrations
 {
     /// <inheritdoc />
-    public partial class AccountsMigration : Migration
+    public partial class NM : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

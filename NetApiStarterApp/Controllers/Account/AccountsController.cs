@@ -23,9 +23,9 @@ namespace NetApiStarterApp.Controllers.Account
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(AddAccountDto accountRequest)
+        public async Task<IActionResult> Login(LoginModel loginModel)
         {
-            var data = await _accountService.AddAccountAsync(accountRequest);
+            var data = await _accountService.ValidateLogin(loginModel);
 
             return Ok(data);
         }
@@ -34,6 +34,14 @@ namespace NetApiStarterApp.Controllers.Account
         public async Task<IActionResult> GetAccounts()
         {
             var data = await _accountService.GetAccountListAsync();
+
+            return Ok(data);
+        }
+
+        [HttpGet("get-account-with-details")]
+        public async Task<IActionResult> GetAccountWithDetails()
+        {
+            var data = await _accountService.GetAccountDetailsListAsync();
 
             return Ok(data);
         }

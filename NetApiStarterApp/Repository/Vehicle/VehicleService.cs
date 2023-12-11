@@ -9,23 +9,23 @@ namespace NetApiStarterApp.Repository.Vehicle
 {
     public class VehicleService : IVehicleService
     {
-        private readonly DataConnection _dataConnection;
+        private readonly DataConnection _dbContext;
         private IMapper _mapper { get; }
 
         public VehicleService(DataConnection dataConnection, IMapper mapper)
         {
-            _dataConnection = dataConnection;
+            _dbContext = dataConnection;
             _mapper = mapper;
         }
 
         public async Task<List<VehicleModel>> GetVehicleListAsync()
         {
-            return await _dataConnection.Vehicles.ToListAsync();
+            return await _dbContext.Vehicles.ToListAsync();
         }
 
         public async Task<VehicleModel> GetVehicleByIdAsync(Guid vehicleId)
         {
-            var vehicle = await _dataConnection.Vehicles.FirstOrDefaultAsync(x => x.VehicleId == vehicleId);
+            var vehicle = await _dbContext.Vehicles.FirstOrDefaultAsync(x => x.VehicleId == vehicleId);
 
             if (vehicle == null)
             {
@@ -44,9 +44,9 @@ namespace NetApiStarterApp.Repository.Vehicle
             vehicleModel.VehicleId = Guid.NewGuid();
             vehicleModel.UploadedBy = Guid.NewGuid();//TODO
             vehicleModel.CreatedAt = DateTime.UtcNow;
-            await _dataConnection.Vehicles.AddAsync(vehicleModel);
+            await _dbContext.Vehicles.AddAsync(vehicleModel);
 
-            await _dataConnection.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync();
             return vehicleModel;
         }
 
@@ -56,7 +56,7 @@ namespace NetApiStarterApp.Repository.Vehicle
             // Update existing vehicle
             var vehicleModel = _mapper.Map<VehicleModel>(vehicleUpdateDto);
 
-            var existingVehicle = await _dataConnection.Vehicles
+            var existingVehicle = await _dbContext.Vehicles
                 .FirstOrDefaultAsync(v => v.VehicleId == vehicleUpdateDto.VehicleId);
 
             if (existingVehicle != null)
@@ -75,19 +75,19 @@ namespace NetApiStarterApp.Repository.Vehicle
                 existingVehicle = new VehicleModel();
             }
 
-            await _dataConnection.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync();
             return existingVehicle;
         }
 
         public async Task<bool> DeleteVehicleAsync(Guid vehicleId)
         {
-            var vehicleToDelete = await _dataConnection.Vehicles
+            var vehicleToDelete = await _dbContext.Vehicles
                 .FirstOrDefaultAsync(v => v.VehicleId == vehicleId);
 
             if (vehicleToDelete != null)
             {
-                _dataConnection.Vehicles.Remove(vehicleToDelete);
-                await _dataConnection.SaveChangesAsync();
+                _dbContext.Vehicles.Remove(vehicleToDelete);
+                await _dbContext.SaveChangesAsync();
                 return true;
             }
 
@@ -96,7 +96,7 @@ namespace NetApiStarterApp.Repository.Vehicle
 
         public async Task<string?> GetVehicleData(Guid vehicleId, string returnColumn)
         {
-            var vehicle = await _dataConnection.Vehicles
+            var vehicle = await _dbContext.Vehicles
                 .FirstOrDefaultAsync(v => v.VehicleId == vehicleId);
 
             if (vehicle == null)

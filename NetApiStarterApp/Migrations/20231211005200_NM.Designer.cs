@@ -12,8 +12,8 @@ using NetApiStarterApp.Data;
 namespace NetApiStarterApp.Migrations
 {
     [DbContext(typeof(DataConnection))]
-    [Migration("20231207181214_AccountsMigration")]
-    partial class AccountsMigration
+    [Migration("20231211005200_NM")]
+    partial class NM
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

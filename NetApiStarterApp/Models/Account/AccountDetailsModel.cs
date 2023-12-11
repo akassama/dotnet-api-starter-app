@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace NetApiStarterApp.Models.Account
 {
@@ -9,7 +10,7 @@ namespace NetApiStarterApp.Models.Account
 
         public Guid AccountId { get; set; }
 
-        public DateTime DateOfBirth { get; set; }
+        public DateTime DateOfBirth { get; set; } = DateTime.Now;
 
         // Computed Age (using a read-only property)
         public int Age
