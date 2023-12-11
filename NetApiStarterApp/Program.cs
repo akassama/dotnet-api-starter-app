@@ -1,3 +1,4 @@
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using NetApiStarterApp.Data;
 using NetApiStarterApp.Models.Mappings;
@@ -8,7 +9,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddFluentValidation(x =>
+    {
+        x.ImplicitlyValidateChildProperties = true;
+        x.RegisterValidatorsFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
+    });
+
+
 
 //Database service
 builder.Services.AddDbContext<DataConnection>(con => con.UseSqlServer(builder.Configuration.GetConnectionString("DataConnection")));
